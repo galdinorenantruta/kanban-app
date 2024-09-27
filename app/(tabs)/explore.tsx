@@ -1,102 +1,144 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, Platform } from 'react-native';
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import {
+  addTaskToProject,
+  moveTaskInProject,
+  Task,
+} from "../../store/projectSlice";
+import {
+  SafeAreaView,
+  TextInput,
+  Button,
+  Text,
+  View,
+  FlatList,
+  PanResponder,
+  TouchableOpacity,
+} from "react-native";
+import { styled } from "nativewind";
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const StyledSafeAreaView = styled(SafeAreaView);
+const StyledText = styled(Text);
+const StyledView = styled(View);
+const StyledTextInput = styled(TextInput);
 
-export default function TabTwoScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={<Ionicons size={310} name="code-slash" style={styles.headerImage} />}>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText> library
-          to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+const Project: React.FC = () => {
+  const dispatch = useDispatch();
+  const projectId = useSelector(
+    (state: RootState) => state.projects.selectedProjectId
   );
-}
+  const project = useSelector((state: RootState) =>
+    state.projects.projects.find((p) => p.id === projectId)
+  );
 
-const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-});
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskAuthor, setTaskAuthor] = useState("");
+  const [taskResponsible, setTaskResponsible] = useState("");
+  const [expandedStatus, setExpandedStatus] = useState<string | null>(null);
+
+  const handleAddTask = () => {
+    if (taskTitle && taskAuthor && taskResponsible && projectId) {
+      const newTask: Task = {
+        id: Date.now().toString(),
+        title: taskTitle,
+        author: taskAuthor,
+        responsible: taskResponsible,
+        status: "Tarefas",
+      };
+      dispatch(addTaskToProject({ projectId, task: newTask }));
+      setTaskTitle("");
+      setTaskAuthor("");
+      setTaskResponsible("");
+    } else {
+      console.log(
+        "Erro: Todos os campos devem ser preenchidos e o projeto deve ser selecionado."
+      );
+    }
+  };
+
+  const handleDrop = (newStatus: string, taskId: string) => {
+    if (projectId) {
+      dispatch(moveTaskInProject({ projectId, taskId, newStatus }));
+    }
+  };
+
+  if (!project) {
+    return <StyledText>Projeto não encontrado</StyledText>;
+  }
+
+  return (
+    <StyledSafeAreaView className="bg-indigo-700 h-screen">
+      <StyledView>
+        <StyledText className="text-2xl font-bold text-neutral-50 text-center">
+          {project.title}
+        </StyledText>
+      </StyledView>
+      <StyledView className="flex-1">
+        {["Tarefas", "Fazendo", "Feito"].map((status) => (
+          <StyledView key={status} className="bg-white m-2 p-4 rounded shadow">
+            <TouchableOpacity
+              onPress={() =>
+                setExpandedStatus(expandedStatus === status ? null : status)
+              }
+            >
+              <StyledText className="font-bold">{status}</StyledText>
+            </TouchableOpacity>
+            {expandedStatus === status && (
+              <StyledView>
+                {status === "Tarefas" && (
+                  <StyledView className="p-2">
+                    <StyledTextInput
+                      value={taskTitle}
+                      onChangeText={setTaskTitle}
+                      placeholder="Título"
+                      className="mb-2"
+                    />
+                    <StyledTextInput
+                      value={taskAuthor}
+                      onChangeText={setTaskAuthor}
+                      placeholder="Autor"
+                      className="mb-2"
+                    />
+                    <StyledTextInput
+                      value={taskResponsible}
+                      onChangeText={setTaskResponsible}
+                      placeholder="Responsável"
+                      className="mb-2"
+                    />
+                    <Button title="Adicionar Tarefa" onPress={handleAddTask} />
+                  </StyledView>
+                )}
+                <FlatList
+                  data={project.tasks.filter((task) => task.status === status)}
+                  keyExtractor={(task) => task.id}
+                  renderItem={({ item }) => (
+                    <StyledView
+                      {...PanResponder.create({
+                        onMoveShouldSetPanResponder: () => true,
+                        onPanResponderRelease: (evt, gestureState) => {
+                          const newStatus =
+                            status === "Tarefas"
+                              ? "Fazendo"
+                              : status === "Fazendo"
+                              ? "Feito"
+                              : "Tarefas";
+                          handleDrop(newStatus, item.id);
+                        },
+                      }).panHandlers}
+                      className="bg-gray-200 p-2 m-1 rounded"
+                    >
+                      <StyledText>{item.title}</StyledText>
+                    </StyledView>
+                  )}
+                />
+              </StyledView>
+            )}
+          </StyledView>
+        ))}
+      </StyledView>
+    </StyledSafeAreaView>
+  );
+};
+
+export default Project;
