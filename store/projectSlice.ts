@@ -4,6 +4,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 export interface Task {
   id: string;
   title: string;
+  description: string;
   author: string;
   responsible: string;
   status: string;

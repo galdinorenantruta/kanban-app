@@ -1,41 +1,33 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-
-import { RootState } from "../store";
-import { useRouter } from "expo-router";
-
+import { useDispatch } from "react-redux";
+import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import {
   SafeAreaView,
   TextInput,
   Button,
   Text,
   View,
-  FlatList,
+  Modal,
   TouchableOpacity,
 } from "react-native";
-import {
-  addProject,
-  selectProject,
-  deleteProject,
-} from "../store/projectSlice";
-
+import { addProject } from "../store/projectSlice";
 import { styled } from "nativewind";
+import Projects from "./Projects";
 
 const StyledSafeAreaView = styled(SafeAreaView);
+
 const StyledText = styled(Text);
 const StyledView = styled(View);
 const StyledTextInput = styled(TextInput);
-const StyledButton = styled(Button);
+
+const StyledTouchableOpacity = styled(TouchableOpacity);
 
 const Header = () => {
-  const router = useRouter();
   const dispatch = useDispatch();
-  const projects = useSelector((state: RootState) => state.projects.projects);
-
+  const [modalVisible, setModalVisible] = useState(false);
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
-  // Função para adicionar novo projeto
   const handleAddProject = () => {
     if (projectTitle && projectDescription) {
       dispatch(
@@ -43,63 +35,72 @@ const Header = () => {
       );
       setProjectTitle("");
       setProjectDescription("");
+      setModalVisible(false); // Fechar o modal após adicionar
     }
   };
 
-  const handleDeleteProject = (projectId: string) => {
-    dispatch(deleteProject({ projectId }));
-  };
-
   return (
-    <StyledSafeAreaView className="p-4">
-      <StyledView className="mb-4">
-        <StyledText className="text-xl font-bold text-blue-600">
-          Criar Novo Projeto
+    <StyledSafeAreaView className="p-4 bg-slate-200 h-full ">
+      <StyledTouchableOpacity
+        className="bg-indigo-600 h-16 items-center justify-center rounded-2xl mx-4 flex-row "
+        onPress={() => setModalVisible(true)} // Abre o modal
+      >
+        <TabBarIcon name="briefcase" color={"#84b98d"} />
+        <StyledText className="ml-4 text-gray-50 text-2xl font-extrabold">
+          Novo Projeto
         </StyledText>
-        <StyledTextInput
-          placeholder="Título do Projeto"
-          value={projectTitle}
-          onChangeText={setProjectTitle}
-          className="border p-2 mt-2 rounded"
-        />
-        <StyledTextInput
-          placeholder="Descrição do Projeto"
-          value={projectDescription}
-          onChangeText={setProjectDescription}
-          className="border p-2 mt-2 rounded"
-        />
-        <StyledButton title="Adicionar Projeto" onPress={handleAddProject} />
-      </StyledView>
+      </StyledTouchableOpacity>
 
-      <StyledText className="text-xl font-bold text-gray-800 mb-2">
-        Projetos Criados
-      </StyledText>
-
-      <FlatList
-        data={projects}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <StyledView className="p-2 bg-white border mb-2 rounded">
-            <StyledText className="text-lg text-gray-700">
-              {item.title}
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <StyledView className=" relative flex-1 justify-center items-center   bg-indigo-600 rounded-2xl">
+          <StyledView className="w-80 p-4 bg-slate-50 rounded-lg  ">
+            <StyledText className="text-xl font-bold text-black mb-2 ">
+              Crie um Novo Projeto
             </StyledText>
-            <StyledText className="text-sm text-gray-500">
-              {item.description}
-            </StyledText>
-
-            <Button
-              title="Ver Detalhes"
-              onPress={() => {
-                dispatch(selectProject(item.id)); // Despacha a ação
-                router.push("/explore"); // Navega para a página do projeto
-              }}
+            <StyledTextInput
+              placeholder="Título do Projeto"
+              value={projectTitle}
+              onChangeText={setProjectTitle}
+              className="border border-gray-600 bg-slate-200 p-2 mt-2 rounded"
             />
-            <TouchableOpacity onPress={() => handleDeleteProject(item.id)}>
-              <Text>X</Text>
-            </TouchableOpacity>
+            <StyledTextInput
+              placeholder="Descrição do Projeto"
+              value={projectDescription}
+              onChangeText={setProjectDescription}
+              className="border border-gray-600 bg-slate-200  p-2 mt-2 rounded h-20"
+            />
+            <StyledTouchableOpacity
+              className="bg-sky-500  h-16 items-center justify-center rounded-2xl mx-4 my-7"
+              onPress={handleAddProject}
+            >
+              <StyledText className="text-gray-50 text-2xl font-extrabold">
+                Adicionar Projeto
+              </StyledText>
+            </StyledTouchableOpacity>
           </StyledView>
-        )}
-      />
+
+          <StyledTouchableOpacity
+            onPress={() => setModalVisible(false)}
+            className="mt-4 absolute top-10 right-10"
+          >
+            <StyledText className="   text-red-500 font-bold ">
+              <TabBarIcon name="close-circle" color={"#f33a3a"} size={35} />
+            </StyledText>
+          </StyledTouchableOpacity>
+        </StyledView>
+      </Modal>
+
+      <StyledView
+        className="border mt-6 border-gray-500
+      "
+      ></StyledView>
+
+      <Projects />
     </StyledSafeAreaView>
   );
 };

@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import projectReducer from "./projectSlice"; // Importa o reducer
+import tabReducer from "./tabSlice";
 
 const store = configureStore({
   reducer: {
-    projects: projectReducer, // Certifique-se de que a chave "projects" é usada corretamente
+    projects: projectReducer,
+    tabs: tabReducer,
   },
 });
 
